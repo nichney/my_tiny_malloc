@@ -23,7 +23,7 @@ void heap_init(void)
 void* my_tiny_malloc(size_t size)
 {
     block_header* current = (block_header*) heap_start;
-    while (current < (block_header*) heap_end) 
+    while ((char*) current < (char*) heap_end) 
     {
         if(current->free && current->size >= (size + sizeof(block_header)) )
         {
