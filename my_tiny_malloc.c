@@ -22,6 +22,7 @@ void heap_init(void)
 
 void* my_tiny_malloc(size_t size)
 {
+    size = (size + 7) & ~7; // round up to 8 bytes
     block_header* current = (block_header*) heap_start;
     while ((char*) current < (char*) heap_end) 
     {
@@ -53,3 +54,8 @@ void* my_tiny_malloc(size_t size)
     return NULL;
 }
 
+
+void my_tiny_free(void* ptr)
+{
+
+}
