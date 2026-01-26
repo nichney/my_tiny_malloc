@@ -57,5 +57,39 @@ void* my_tiny_malloc(size_t size)
 
 void my_tiny_free(void* ptr)
 {
+    if(ptr == NULL || ptr < heap_start || ptr >= heap_end)
+        return; // Well, NULL is already not busy, so we can just return
 
+    block_header* header = (block_header*) ((char*) ptr - sizeof(block_header)); // ptr just point to data, so we need to calculate header location first
+
+    if(header->free)
+        return; // prevent double free
+
+    header->free = 1; // now block marked as free
+
+    // right merge
+    char* right_address = (char*)header + header->size;
+    if(right_address < (char*) heap_end)
+    {
+        if(((block_header*) right_address)->free)
+        {
+            header->size = header->size + ((block_header*) right_address)->size;
+        }
+    }
+
+    // left merge
+    block_header* current = (block_header*) heap_start;
+    while ((char*) current < (char*) header)
+    {
+        if( (char*) ((char*)current + current->size) == (char*) header)
+        {
+            if(current->free)
+            {
+                current->size = current->size + header->size;
+            }
+            
+            break;
+        }
+        current = (block_header*)((char*)current + current->size);
+    } 
 }
