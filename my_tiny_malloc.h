@@ -2,6 +2,8 @@
 #define MY_TINY_MALLOC_H
 
 #include <stddef.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #define HEAP_SIZE (1024 * 1024)
 

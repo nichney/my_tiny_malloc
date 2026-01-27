@@ -1,14 +1,28 @@
 #include "my_tiny_malloc.h"
 
 
-static unsigned char heap[HEAP_SIZE];
-void* heap_start = heap;
-void* heap_end   = heap + HEAP_SIZE;
+void* heap_start = NULL;
+void* heap_end   = NULL + HEAP_SIZE;
 const long int MIN_DATA_SIZE = 2 * sizeof(block_header) + 8;
 
 
 void heap_init(void)
 {
+    void* mem = mmap(
+        NULL,
+        HEAP_SIZE,
+        PROT_READ | PROT_WRITE,
+        MAP_PRIVATE | MAP_ANONYMOUS,
+        -1,
+        0
+    );
+
+    if (mem == MAP_FAILED)
+        return;
+
+    heap_start = mem;
+    heap_end = (char*)mem + HEAP_SIZE;
+
     block_header* first = (block_header*)heap_start;
     first->size = HEAP_SIZE;
     first->free = 1;
