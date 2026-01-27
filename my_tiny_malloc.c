@@ -5,6 +5,12 @@ void* heap_start = NULL;
 void* heap_end   = NULL + HEAP_SIZE;
 const long int MIN_DATA_SIZE = 2 * sizeof(block_header) + 8;
 
+// counters
+long long int counter_total_allocated = 0;
+long long int counter_total_free = 0;
+long long int counter_number_of_blocks = 0;
+long long int counter_peak_usage = 0;
+
 
 void heap_init(void)
 {
@@ -29,6 +35,10 @@ void heap_init(void)
     block_header* footer = (block_header*)((char*)heap_start + first->size - sizeof(block_header));
     footer->size = HEAP_SIZE;
     footer->free = 1;
+
+    /* Counter section */
+    counter_total_free = HEAP_SIZE;
+    counter_number_of_blocks = 1;
 }
 
 
@@ -64,6 +74,9 @@ void* my_tiny_malloc(size_t size)
                 block_header* next_footer = (block_header*)((char*)next_block + next_block->size - sizeof(block_header));
                 next_footer->size = next_block->size;
                 next_footer->free = 1;
+
+                /* Counter section */
+                counter_number_of_blocks += 1;
             }
             else
             {
@@ -72,6 +85,12 @@ void* my_tiny_malloc(size_t size)
                 block_header* footer = (block_header*)((char*)current + current->size - sizeof(block_header));
                 footer->free = 0;
             }
+            /* Counter section */
+            counter_total_allocated += needed_size;
+            counter_total_free -= needed_size;
+            if (counter_total_allocated > counter_peak_usage)
+                counter_peak_usage = counter_total_allocated;
+
             return (void*)((char*)current + sizeof(block_header));
         }
         current = (block_header*)((char*)current + current->size);
@@ -95,6 +114,10 @@ void my_tiny_free(void* ptr)
     block_header* footer = (block_header*)((char*)header + header->size - sizeof(block_header));
     footer->free = 1; // mark in footer too
 
+    /* Counter section */
+    counter_total_free += header->size;
+    counter_total_allocated -= header->size;
+
     // right merge
     char* right_address = (char*)header + header->size;
     if(right_address < (char*) heap_end)
@@ -106,6 +129,9 @@ void my_tiny_free(void* ptr)
             block_header* final_footer = (block_header*)((char*)header + header->size - sizeof(block_header));
             final_footer->size = header->size;
             final_footer->free = 1;
+
+            /* Counter section */
+            counter_number_of_blocks -= 1;
         }
     }
 
@@ -122,7 +148,10 @@ void my_tiny_free(void* ptr)
             final_footer->size = prev_header->size;
             final_footer->free = 1;
 
-            header = prev_header; 
+            header = prev_header;
+            
+            /* Counter section */
+            counter_number_of_blocks -= 1;
         }
     }
 }

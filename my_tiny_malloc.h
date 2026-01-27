@@ -14,6 +14,10 @@ typedef struct block_header {
 
 extern void* heap_start;
 extern void* heap_end;
+extern long long int counter_total_allocated;
+extern long long int counter_total_free;
+extern long long int counter_number_of_blocks;
+extern long long int counter_peak_usage;
 
 void heap_init(void);
 void* my_tiny_malloc(size_t size);
