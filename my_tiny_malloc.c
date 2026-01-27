@@ -36,13 +36,13 @@ void* my_tiny_malloc(size_t size)
 {
     size = (size + 7) & ~7; // round up to 8 bytes
     block_header* current = (block_header*) heap_start;
+    size_t needed_size = size + 2 * sizeof(block_header); // we need 2 block_headers because of header and footer on the block
     while ((char*) current < (char*) heap_end) 
     {
-        if(current->free && current->size >= (size + 2 * sizeof(block_header)) )
+        if(current->free && current->size >= needed_size)
         {
             // we found a big block!
             size_t total_block_size = current->size;
-            size_t needed_size = size + 2 * sizeof(block_header); // we need 2 block_headers because of header and footer on the block
 
             if(total_block_size - needed_size >= 2 * sizeof(block_header) + MIN_DATA_SIZE)
             {
