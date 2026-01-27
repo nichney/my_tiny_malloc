@@ -6,6 +6,8 @@
 #include <unistd.h>
 
 #define HEAP_SIZE (1024 * 1024)
+//#define ALLOC_STRATEGY_FIRST_FIT
+//#define ALLOC_STRATEGY_BEST_FIT
 
 typedef struct block_header {
     size_t size;
