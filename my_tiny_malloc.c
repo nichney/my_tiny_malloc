@@ -122,7 +122,7 @@ void* allocate_block(block_header* block, size_t needed, mem_chunk* chunk)
 
 void* my_tiny_malloc(size_t size)
 {
-    size = (size + 7) & ~7; // round up to 8 bytes
+    size = (size + 15) & ~15; // round up to 16 bytes
     size_t needed_size = size + 2 * sizeof(block_header); // we need 2 block_headers because of header and footer on the block
     
     pthread_mutex_lock(&mutex);
