@@ -11,6 +11,9 @@ long long int counter_number_of_blocks = 0;
 long long int counter_peak_usage = 0;
 long long int counter_total_chunks = 0;
 
+// mutex
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 
 mem_chunk* request_new_chunk(size_t size)
 {
@@ -121,6 +124,9 @@ void* my_tiny_malloc(size_t size)
 {
     size = (size + 7) & ~7; // round up to 8 bytes
     size_t needed_size = size + 2 * sizeof(block_header); // we need 2 block_headers because of header and footer on the block
+    
+    pthread_mutex_lock(&mutex);
+
     mem_chunk* curr_chunk = chunks_list;
     while(curr_chunk)
     {
@@ -132,7 +138,9 @@ void* my_tiny_malloc(size_t size)
         {
             if(current->free && current->size >= needed_size)
             {
-                return allocate_block(current, needed_size, curr_chunk);
+                void* result = allocate_block(current, needed_size, curr_chunk);
+                pthread_mutex_unlock(&mutex);
+                return result;
             }
             current = (block_header*) ((char*)current + current->size);
         }
@@ -151,7 +159,9 @@ void* my_tiny_malloc(size_t size)
         }
         if(best_block)
         {
-            return allocate_block(best_block, needed_size, curr_chunk);
+            void* result = allocate_block(best_block, needed_size, curr_chunk);
+            pthread_mutex_unlock(&mutex);
+            return result;
         }
         #endif
         curr_chunk = curr_chunk->next;
@@ -159,11 +169,17 @@ void* my_tiny_malloc(size_t size)
 
     // we didn't found memory - request some new
     mem_chunk* fresh_chunk = request_new_chunk(needed_size);
-    if(!fresh_chunk) return NULL;
+    if(!fresh_chunk)
+    {
+        pthread_mutex_unlock(&mutex);
+        return NULL;
+    }
 
     // we don't need to check if there are enougth space for block, because we just allocated it
     block_header* first_block = (block_header*)((char*)fresh_chunk + sizeof(mem_chunk) + sizeof(block_header));
-    return allocate_block(first_block, needed_size, fresh_chunk);
+    void* result = allocate_block(first_block, needed_size, fresh_chunk);
+    pthread_mutex_unlock(&mutex);
+    return result;
 }
 
 
@@ -172,14 +188,20 @@ void my_tiny_free(void* ptr)
     if(ptr == NULL)
         return; // Well, NULL is already not busy, so we can just return
 
+    pthread_mutex_lock(&mutex);
     block_header* header = (block_header*) ((char*) ptr - sizeof(block_header)); // ptr just point to data, so we need to calculate header location first
 
-    if(header->magic != MAGIC_NUMBER){
+    if(header->magic != MAGIC_NUMBER)
+    {
+        pthread_mutex_unlock(&mutex);
         return; // Invalid pointer
     }
 
     if(header->free)
+    {
+        pthread_mutex_unlock(&mutex);
         return; // prevent double free
+    }
 
     header->free = 1; // now block marked as free
 
@@ -239,4 +261,5 @@ void my_tiny_free(void* ptr)
 
         counter_total_chunks -= 1;
     }
+    pthread_mutex_unlock(&mutex);
 }

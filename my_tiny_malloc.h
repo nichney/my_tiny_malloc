@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <sys/resource.h>
+#include <pthread.h>
 
 //#define ALLOC_STRATEGY_BEST_FIT
 #define MAGIC_NUMBER 0xAABBCCDD
